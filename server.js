@@ -32,8 +32,12 @@ app.get("/config.js", (req, res) => {
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate"
   );
+
+  let ws_url; // Declare variable outside the if/else
   if (config.WS_URL && config.PORT) {
     ws_url = config.WS_URL + ":" + config.PORT;
+  } else {
+    ws_url = "";
   }
 
   res.send(`
