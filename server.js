@@ -87,6 +87,9 @@ if (config.OP25_API_SERVER_URL) {
   );
 }
 
+// Create the HTTP server so that we can handle WebSocket upgrades.
+const server = http.createServer(app);
+
 // ----- Initialize Janus Proxy (if JANUS_WS_URL is set) -----
 if (config.JANUS_WS_URL) {
   log.debug("[Server] JANUS_WS_URL is set; initializing Janus proxy.");
@@ -107,9 +110,6 @@ if (config.OP25_API_WS_URL) {
 } else {
   log.debug("[Server] OP25_API_WS_URL not set; OP25 WebSocket proxy disabled.");
 }
-
-// Create the HTTP server so that we can handle WebSocket upgrades.
-const server = http.createServer(app);
 
 if (op25Wss) {
   registerUpgradeHandler(server);
