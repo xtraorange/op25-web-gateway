@@ -91,7 +91,7 @@ if (config.OP25_API_SERVER_URL) {
 if (config.JANUS_WS_URL) {
   log.debug("[Server] JANUS_WS_URL is set; initializing Janus proxy.");
   // Register upgrade handling for Janus proxy.
-  const janusProxy = require("./janusProxy");
+  const janusProxy = require("./janus_proxy");
   janusProxy.initJanusProxy(server);
 } else {
   log.debug("[Server] JANUS_WS_URL not set; Janus proxy disabled.");
