@@ -17,4 +17,4 @@ class Log {
   }
 }
 
-module.exports = Debug;
+module.exports = Log;
