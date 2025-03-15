@@ -1,0 +1,17 @@
+{
+  "name": "op25-web-gateway",
+  "version": "1.0.0",
+  "description": "A webserver that proxies Janus and OP25 API functionality.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.1",
+    "ws": "^8.8.1"
+  },
+  "author": "",
+  "license": "MIT"
+}
