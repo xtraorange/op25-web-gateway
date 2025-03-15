@@ -15,6 +15,10 @@ const {
 } = require("./op25_ws_proxy.js");
 const { initJanusProxy } = require("./janus_proxy.js");
 
+const Log = require("./log");
+
+const log = new Log("[Server]");
+
 const app = express();
 app.use(express.json());
 
@@ -58,7 +62,7 @@ if (config.CLOUDFLARE_TURN_KEY_ID && config.CLOUDFLARE_TURN_API_TOKEN) {
       );
       res.json(response.data);
     } catch (error) {
-      console.error(
+      log.error(
         "[Server] Error generating TURN credentials:",
         error.response?.data || error.message
       );
@@ -66,44 +70,42 @@ if (config.CLOUDFLARE_TURN_KEY_ID && config.CLOUDFLARE_TURN_API_TOKEN) {
     }
   });
 } else {
-  console.debug(
+  log.debug(
     "[Server] TURN credentials endpoint disabled due to missing configuration."
   );
 }
 
 // ----- Register OP25 API Proxy Routes (if OP25_API_SERVER_URL is set) -----
 if (config.OP25_API_SERVER_URL) {
-  console.debug(
+  log.debug(
     "[Server] OP25_API_SERVER_URL is set; registering OP25 API proxy routes."
   );
   registerOp25ApiRoutes(app);
 } else {
-  console.debug(
+  log.debug(
     "[Server] OP25_API_SERVER_URL not set; OP25 API proxy routes disabled."
   );
 }
 
 // ----- Initialize Janus Proxy (if JANUS_WS_URL is set) -----
 if (config.JANUS_WS_URL) {
-  console.debug("[Server] JANUS_WS_URL is set; initializing Janus proxy.");
+  log.debug("[Server] JANUS_WS_URL is set; initializing Janus proxy.");
   // Register upgrade handling for Janus proxy.
   const janusProxy = require("./janusProxy");
   janusProxy.initJanusProxy(server);
 } else {
-  console.debug("[Server] JANUS_WS_URL not set; Janus proxy disabled.");
+  log.debug("[Server] JANUS_WS_URL not set; Janus proxy disabled.");
 }
 
 // ----- Initialize OP25 WebSocket Proxy (if OP25_API_WS_URL is set) -----
 let op25Wss = null;
 if (config.OP25_API_WS_URL) {
-  console.debug(
+  log.debug(
     "[Server] OP25_API_WS_URL is set; initializing OP25 WebSocket proxy."
   );
   op25Wss = initOp25WsProxy();
 } else {
-  console.debug(
-    "[Server] OP25_API_WS_URL not set; OP25 WebSocket proxy disabled."
-  );
+  log.debug("[Server] OP25_API_WS_URL not set; OP25 WebSocket proxy disabled.");
 }
 
 // Create the HTTP server so that we can handle WebSocket upgrades.
@@ -117,5 +119,5 @@ if (op25Wss) {
 // (See that module for its upgrade handler registration.)
 
 server.listen(config.PORT, () => {
-  console.debug(`[Server] Server running at http://localhost:${config.PORT}`);
+  log.debug(`[Server] Server running at http://localhost:${config.PORT}`);
 });

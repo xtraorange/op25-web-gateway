@@ -2,21 +2,23 @@
 const WebSocket = require("ws");
 const config = require("./config");
 
-const debug = (msg) => console.debug("[JanusProxy]", msg);
+const Log = require("./log");
+
+const log = new Log("[JanusProxy]");
 
 let janusWss = null;
 
 function initJanusProxy(app) {
   if (!config.JANUS_WS_URL) {
-    debug("JANUS_WS_URL not set; Janus proxy disabled.");
+    log.debug("JANUS_WS_URL not set; Janus proxy disabled.");
     return;
   }
 
-  debug(`Enabling Janus proxy using URL: ${config.JANUS_WS_URL}`);
+  log.debug(`Enabling Janus proxy using URL: ${config.JANUS_WS_URL}`);
   janusWss = new WebSocket.Server({ noServer: true });
 
   janusWss.on("connection", (ws) => {
-    debug("Janus WebSocket client connected");
+    log.debug("Janus WebSocket client connected");
     let sessionId = null;
     let handleId = null;
     let keepaliveInterval = null;
@@ -24,13 +26,13 @@ function initJanusProxy(app) {
     const janusWs = new WebSocket(config.JANUS_WS_URL, ["janus-protocol"]);
 
     janusWs.on("open", () => {
-      debug("Connected to Janus via WebSocket");
+      log.debug("Connected to Janus via WebSocket");
       const createSessionMsg = {
         janus: "create",
         transaction: "txn_create_session",
         apisecret: config.JANUS_API_SECRET || undefined,
       };
-      debug(
+      log.debug(
         "Sending create session message:",
         JSON.stringify(createSessionMsg)
       );
@@ -40,14 +42,14 @@ function initJanusProxy(app) {
     janusWs.on("message", (data) => {
       try {
         const message = JSON.parse(data);
-        debug(`Received message: ${JSON.stringify(message)}`);
+        log.debug(`Received message: ${JSON.stringify(message)}`);
 
         if (
           message.janus === "success" &&
           message.transaction === "txn_create_session"
         ) {
           sessionId = message.data.id;
-          debug(`Created Janus session: ${sessionId}`);
+          log.debug(`Created Janus session: ${sessionId}`);
 
           keepaliveInterval = setInterval(() => {
             if (janusWs.readyState === WebSocket.OPEN && sessionId) {
@@ -58,7 +60,7 @@ function initJanusProxy(app) {
                 apisecret: config.JANUS_API_SECRET || undefined,
               };
               janusWs.send(JSON.stringify(keepaliveMsg));
-              debug(`Sent keepalive for session ${sessionId}`);
+              log.debug(`Sent keepalive for session ${sessionId}`);
             }
           }, 30000);
 
@@ -69,7 +71,7 @@ function initJanusProxy(app) {
             transaction: "txn_attach_streaming",
             apisecret: config.JANUS_API_SECRET || undefined,
           };
-          debug(`Sending attach message: ${JSON.stringify(attachMsg)}`);
+          log.debug(`Sending attach message: ${JSON.stringify(attachMsg)}`);
           janusWs.send(JSON.stringify(attachMsg));
           return;
         }
@@ -79,7 +81,7 @@ function initJanusProxy(app) {
           message.transaction === "txn_attach_streaming"
         ) {
           handleId = message.data.id;
-          debug(`Attached to Streaming Plugin: ${handleId}`);
+          log.debug(`Attached to Streaming Plugin: ${handleId}`);
           ws.send(
             JSON.stringify({ event: "janus_session", sessionId, handleId })
           );
@@ -92,7 +94,7 @@ function initJanusProxy(app) {
             transaction: "txn_list_streams",
             apisecret: config.JANUS_API_SECRET || undefined,
           };
-          debug(`Requesting stream list: ${JSON.stringify(listMsg)}`);
+          log.debug(`Requesting stream list: ${JSON.stringify(listMsg)}`);
           janusWs.send(JSON.stringify(listMsg));
           return;
         }
@@ -106,7 +108,7 @@ function initJanusProxy(app) {
               message.plugindata.data &&
               message.plugindata.data.list) ||
             [];
-          debug(`Received streams list: ${JSON.stringify(streams)}`);
+          log.debug(`Received streams list: ${JSON.stringify(streams)}`);
           ws.send(JSON.stringify({ event: "streams", streams }));
           return;
         }
@@ -118,7 +120,7 @@ function initJanusProxy(app) {
     });
 
     janusWs.on("close", () => {
-      debug("Janus WebSocket connection closed");
+      log.debug("Janus WebSocket connection closed");
       if (keepaliveInterval) clearInterval(keepaliveInterval);
     });
 
@@ -129,7 +131,7 @@ function initJanusProxy(app) {
     ws.on("message", (message) => {
       try {
         const clientMsg = JSON.parse(message);
-        debug(`Received from frontend: ${JSON.stringify(clientMsg)}`);
+        log.debug(`Received from frontend: ${JSON.stringify(clientMsg)}`);
 
         if (
           clientMsg.janus === "message" &&
@@ -149,7 +151,7 @@ function initJanusProxy(app) {
             apisecret: config.JANUS_API_SECRET || undefined,
           };
           janusWs.send(JSON.stringify(watchMsg));
-          debug(`Sent watch message: ${JSON.stringify(watchMsg)}`);
+          log.debug(`Sent watch message: ${JSON.stringify(watchMsg)}`);
         } else if (
           clientMsg.janus === "message" &&
           clientMsg.body.request === "start"
@@ -164,7 +166,7 @@ function initJanusProxy(app) {
             apisecret: config.JANUS_API_SECRET || undefined,
           };
           janusWs.send(JSON.stringify(startMsg));
-          debug(`Sent start message: ${JSON.stringify(startMsg)}`);
+          log.debug(`Sent start message: ${JSON.stringify(startMsg)}`);
         } else if (clientMsg.janus === "trickle") {
           const trickleMsg = {
             janus: "trickle",
@@ -175,7 +177,7 @@ function initJanusProxy(app) {
             apisecret: config.JANUS_API_SECRET || undefined,
           };
           janusWs.send(JSON.stringify(trickleMsg));
-          debug(`Sent trickle message: ${JSON.stringify(trickleMsg)}`);
+          log.debug(`Sent trickle message: ${JSON.stringify(trickleMsg)}`);
         }
       } catch (err) {
         console.error(
@@ -186,7 +188,7 @@ function initJanusProxy(app) {
     });
 
     ws.on("close", () => {
-      debug("Janus WebSocket client disconnected");
+      log.debug("Janus WebSocket client disconnected");
       if (keepaliveInterval) clearInterval(keepaliveInterval);
       if (janusWs && janusWs.readyState === WebSocket.OPEN) {
         const destroyMsg = {
@@ -196,7 +198,7 @@ function initJanusProxy(app) {
           session_id: sessionId,
         };
         janusWs.send(JSON.stringify(destroyMsg));
-        debug(`Sent destroy message for session ${sessionId}`);
+        log.debug(`Sent destroy message for session ${sessionId}`);
       }
     });
   });
@@ -209,16 +211,12 @@ module.exports = {
       server.on("upgrade", (request, socket, head) => {
         if (request.url.startsWith("/janus")) {
           janusWss.handleUpgrade(request, socket, head, (ws) => {
-            console.debug("[JanusProxy] Upgraded connection on /janus");
+            console.log.debug("[JanusProxy] Upgraded connection on /janus");
             janusWss.emit("connection", ws, request);
           });
         }
       });
-      debug("Janus WebSocket upgrade handling installed.");
+      log.debug("Janus WebSocket upgrade handling installed.");
     }
   },
 };
-
-function debug(msg) {
-  console.debug("[JanusProxy]", msg);
-}

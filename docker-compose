@@ -1,0 +1,25 @@
+version: "3"
+services:
+  web:
+    image: node:18-alpine
+    container_name: op25-web-gateway
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - op25-web-gateway_data:/app
+    working_dir: /app
+    command: >
+      sh -c '
+      if [ ! -d ".git" ]; then 
+        echo "No repository found. Cloning from GitHub..."; 
+        git clone https://github.com/xtraorange/op25-web-gateway.git .; 
+      else 
+        echo "Repository found. Pulling latest updates..."; 
+        git pull; 
+      fi &&
+      echo "Installing dependencies..." &&
+      npm install &&
+      echo "Starting OP25 Web Gateway..." &&
+      npm start'
+volumes:
+  op25-web-gateway_data:

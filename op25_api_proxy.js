@@ -2,19 +2,21 @@
 const axios = require("axios");
 const config = require("./config");
 
-const debug = (msg) => console.debug("[OP25ApiProxy]", msg);
+const Log = require("./log");
+
+const log = new Log("[OP25ApiProxy]");
 
 async function proxyRequest(req, res, endpoint) {
   try {
     const headers = {};
     if (config.OP25_API_SECRET_TOKEN) {
       headers.Authorization = config.OP25_API_SECRET_TOKEN;
-      debug("Using configured OP25_API_SECRET_TOKEN for OP25 proxy");
+      log.debug("Using configured OP25_API_SECRET_TOKEN for OP25 proxy");
     } else if (req.headers.authorization) {
       headers.Authorization = req.headers.authorization;
-      debug("Using request's authorization header for OP25 proxy");
+      log.debug("Using request's authorization header for OP25 proxy");
     }
-    debug(
+    log.debug(
       `Proxying ${req.method} request to ${config.OP25_API_SERVER_URL}${endpoint}`
     );
     const response = await axios({
@@ -23,7 +25,7 @@ async function proxyRequest(req, res, endpoint) {
       headers,
       data: req.body,
     });
-    debug(`Received response: ${JSON.stringify(response.data)}`);
+    log.debug(`Received response: ${JSON.stringify(response.data)}`);
     res.json(response.data);
   } catch (error) {
     console.error(
@@ -36,10 +38,10 @@ async function proxyRequest(req, res, endpoint) {
 
 function registerOp25ApiRoutes(app) {
   if (!config.OP25_API_SERVER_URL) {
-    debug("OP25_API_SERVER_URL not set; skipping OP25 API proxy routes.");
+    log.debug("OP25_API_SERVER_URL not set; skipping OP25 API proxy routes.");
     return;
   }
-  debug(`Enabling OP25 API proxy routes to ${config.OP25_API_SERVER_URL}`);
+  log.debug(`Enabling OP25 API proxy routes to ${config.OP25_API_SERVER_URL}`);
 
   // Define routes that proxy requests to the OP25 server.
   app.post("/api/op25/update", (req, res) =>
