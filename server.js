@@ -32,11 +32,13 @@ app.get("/config.js", (req, res) => {
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate"
   );
+  if (config.WS_URL && config.PORT) {
+    ws_url = config.WS_URL + ":" + config.PORT;
+  }
+
   res.send(`
     window.config = {
-      WS_URL: ${JSON.stringify(
-        config.WS_URL + ":" + (config.PORT || "3000") || null
-      )},
+      WS_URL: ${JSON.stringify(ws_url || null)},
       TURN_SERVER_URL: ${JSON.stringify(
         "turn:turn.cloudflare.com:3478?transport=udp"
       )}
