@@ -94,8 +94,7 @@ const server = http.createServer(app);
 if (config.JANUS_WS_URL) {
   log.debug("[Server] JANUS_WS_URL is set; initializing Janus proxy.");
   // Register upgrade handling for Janus proxy.
-  const janusProxy = require("./janus_proxy");
-  janusProxy.initJanusProxy(server);
+  initJanusProxy(server);
 } else {
   log.debug("[Server] JANUS_WS_URL not set; Janus proxy disabled.");
 }
