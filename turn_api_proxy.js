@@ -9,7 +9,7 @@ const log = new Log("[TURNApiProxy]");
 
 function registerTurnCredentialsRoute(app) {
   if (config.target_turn_key_id && config.target_turn_api_token) {
-    app.get("/turn-credentials", async (req, res) => {
+    app.get("/api/turn-credentials", async (req, res) => {
       const url = `https://rtc.live.cloudflare.com/v1/turn/keys/${config.target_turn_key_id}/credentials/generate`;
       try {
         const response = await axios.post(
