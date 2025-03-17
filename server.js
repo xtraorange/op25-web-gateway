@@ -7,10 +7,8 @@ const WebSocket = require("ws");
 const config = require("./config");
 const Log = require("./log");
 const { initGatewayWsProxy } = require("./gateway_ws_proxy");
-const {
-  registerOp25ApiRoutes,
-  registerTurnCredentialsRoute,
-} = require("./op25_api_proxy");
+const { registerOp25ApiRoutes } = require("./op25_api_proxy");
+const { registerTurnCredentialsRoute } = require("./turn_api_proxy");
 
 const log = new Log("[Server]");
 
