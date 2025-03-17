@@ -11,20 +11,19 @@ function registerTurnCredentialsRoute(app) {
   if (config.target_turn_key_id && config.target_turn_api_token) {
     app.get("/api/turn-credentials", async (req, res) => {
       const url = `https://rtc.live.cloudflare.com/v1/turn/keys/${config.target_turn_key_id}/credentials/generate`;
+      const jsonBody = JSON.stringify({
+        ttl: Number(config.target_turn_credential_ttl), // converts string to number if needed
+        customIdentifier: config.target_turn_custom_identifier,
+      });
+      const headers = {
+        Authorization: `Bearer ${config.target_turn_api_token}`,
+        "Content-Type": "application/json",
+      };
+
       try {
-        const response = await axios.post(
-          url,
-          {
-            ttl: config.target_turn_credential_ttl,
-            customIdentifier: config.target_turn_custom_identifier,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${config.target_turn_api_token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await axios.post(url, jsonBody, {
+          headers: headers,
+        });
         res.json(response.data);
       } catch (error) {
         log.error(

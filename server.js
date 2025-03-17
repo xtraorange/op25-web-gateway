@@ -73,5 +73,5 @@ server.on("upgrade", (request, socket, head) => {
 });
 
 server.listen(config.gateway_port, () => {
-  log.debug(`[Server] Running at http://localhost:${config.gateway_port}`);
+  log.debug(`Running at http://localhost:${config.gateway_port}`);
 });

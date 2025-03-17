@@ -96,7 +96,7 @@ export default class JanusAudioClient {
     }, 5000);
     this.cleanupPeerConnection();
 
-    iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+    let iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
     // Fetch TURN credentials from our backend
     let turnCredentials = {};
