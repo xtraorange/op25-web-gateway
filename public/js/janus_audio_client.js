@@ -1,16 +1,16 @@
+// janus_audio_client.js
 export default class JanusAudioClient {
   constructor({
     wsUrl, // now provided dynamically
     audioElementId = "audioPlayer",
   } = {}) {
-    // Use the provided wsUrl, or fall back to the injected configuration,
-    // or use a dynamic default based on the current host.
+    // Use the provided wsUrl, or fall back to the injected configuration.
     this.wsUrl =
       wsUrl ||
-      (window.config && window.config.WS_URL) ||
+      (window.config && window.config.gateway_ws_url) ||
       `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
         window.location.host
-      }`;
+      }/ws`;
     this.audioElementId = audioElementId;
     this.ws = null;
     this.sessionId = null;
@@ -28,7 +28,11 @@ export default class JanusAudioClient {
   initWebSocket() {
     console.log("Creating WebSocket connection to:", this.wsUrl);
     this.ws = new WebSocket(this.wsUrl);
-    this.ws.onopen = () => console.log("WebSocket connected");
+    this.ws.onopen = () => {
+      console.log("WebSocket connected");
+      // Send initial message to indicate that this client wants to use the Janus service.
+      this.ws.send(JSON.stringify({ service: "janus" }));
+    };
     this.ws.onmessage = async (event) => {
       const message = JSON.parse(event.data);
       this.handleWSMessage(message);
@@ -104,8 +108,8 @@ export default class JanusAudioClient {
 
     // Get TURN server URL from the injected configuration (or use fallback)
     const turnServerUrl =
-      window.config && window.config.TURN_SERVER_URL
-        ? window.config.TURN_SERVER_URL
+      window.config && window.config.turn_server_url
+        ? window.config.turn_server_url
         : "turn:turn.example.com?transport=tcp";
 
     // Create RTCPeerConnection with TURN and STUN servers
@@ -232,6 +236,20 @@ export default class JanusAudioClient {
         session_id: this.sessionId,
         handle_id: this.handleId,
         body: { request: "watch", id: streamId, audio: true, video: false },
+        transaction: `txn_${Date.now()}`,
+      })
+    );
+  }
+
+  // Example stub for sending additional commands if needed.
+  sendCommand(command) {
+    console.log("Sending command to Janus:", command);
+    this.ws.send(
+      JSON.stringify({
+        janus: "message",
+        session_id: this.sessionId,
+        handle_id: this.handleId,
+        body: { request: command },
         transaction: `txn_${Date.now()}`,
       })
     );

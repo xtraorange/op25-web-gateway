@@ -1,12 +1,14 @@
+// app.js
 import JanusAudioClient from "./janus_audio_client.js";
 
 // Determine the WebSocket URL dynamically using the injected configuration.
+// If window.config.gateway_ws_url is set, use that; otherwise, fall back to a constructed URL.
 const wsUrl =
-  window.config && window.config.WS_URL
-    ? window.config.WS_URL
+  window.config && window.config.gateway_ws_url
+    ? window.config.gateway_ws_url
     : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
         window.location.host
-      }`;
+      }/ws`;
 
 window.janusClient = new JanusAudioClient({
   wsUrl,
