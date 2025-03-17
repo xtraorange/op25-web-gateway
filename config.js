@@ -7,56 +7,51 @@ const debug = (msg) => console.debug("[CONFIG]", msg);
 const isSet = (envVar) => envVar && envVar.trim().length > 0;
 
 const config = {
-  // General Server Configuration
-  PORT: process.env.PORT || 3000,
-  WS_URL: process.env.WS_URL && process.env.WS_URL.trim(),
+  // Gateway (client-facing) configuration.
+  gateway_port: process.env.GATEWAY_PORT || 3000,
+  // For now, we assume the gateway URL is constructed from the host/port of this server.
+  gateway_ws_path: process.env.GATEWAY_WS_PATH || "/ws",
+  gateway_api_path: process.env.GATEWAY_API_PATH || "/api",
+  // Exposed to the frontend.
+  gateway_url: process.env.GATEWAY_URL || null,
 
-  // Janus Proxy Configuration
-  JANUS_WS_URL: process.env.JANUS_WS_URL && process.env.JANUS_WS_URL.trim(),
-  JANUS_API_SECRET:
-    process.env.JANUS_API_SECRET && process.env.JANUS_API_SECRET.trim(),
+  // Target (backend) configuration.
+  target_janus_ws_url:
+    process.env.TARGET_JANUS_WS_URL && process.env.TARGET_JANUS_WS_URL.trim(),
+  target_op25_api_url:
+    process.env.TARGET_OP25_API_URL && process.env.TARGET_OP25_API_URL.trim(),
+  target_op25_ws_url:
+    process.env.TARGET_OP25_WS_URL && process.env.TARGET_OP25_WS_URL.trim(),
 
-  // TURN / Cloudflare Configuration
-  CLOUDFLARE_TURN_KEY_ID: process.env.CLOUDFLARE_TURN_KEY_ID,
-  CLOUDFLARE_TURN_API_TOKEN: process.env.CLOUDFLARE_TURN_API_TOKEN,
-  CLOUDFLARE_TURN_CREDENTIAL_TTL:
-    process.env.CLOUDFLARE_TURN_CREDENTIAL_TTL || 86400,
-  CLOUDFLARE_TURN_CUSTOM_IDENTIFIER:
-    process.env.CLOUDFLARE_TURN_CUSTOM_IDENTIFIER || "op25_web_gateway",
+  // Optional shared secrets/tokens for target connections.
+  target_janus_api_secret:
+    process.env.TARGET_JANUS_API_SECRET &&
+    process.env.TARGET_JANUS_API_SECRET.trim(),
+  target_op25_api_secret_token:
+    process.env.TARGET_OP25_API_SECRET_TOKEN &&
+    process.env.TARGET_OP25_API_SECRET_TOKEN.trim(),
 
-  // OP25 Proxy Configuration
-  OP25_API_SERVER_URL:
-    process.env.OP25_API_SERVER_URL && process.env.OP25_API_SERVER_URL.trim(),
-  OP25_API_WS_URL:
-    process.env.OP25_API_WS_URL && process.env.OP25_API_WS_URL.trim(),
-  OP25_API_SECRET_TOKEN:
-    process.env.OP25_API_SECRET_TOKEN &&
-    process.env.OP25_API_SECRET_TOKEN.trim(),
+  // TURN / Cloudflare Configuration (for Janus target)
+  target_turn_key_id: process.env.TARGET_TURN_KEY_ID,
+  target_turn_api_token: process.env.TARGET_TURN_API_TOKEN,
+  target_turn_credential_ttl: process.env.TARGET_TURN_CREDENTIAL_TTL || 86400,
+  target_turn_custom_identifier:
+    process.env.TARGET_TURN_CUSTOM_IDENTIFIER || "op25_web_gateway",
 };
 
-debug(`PORT: ${config.PORT}`);
-debug(`WS_URL: ${config.WS_URL || "not set"}`);
+debug(`gateway_port: ${config.gateway_port}`);
+debug(`gateway_ws_path: ${config.gateway_ws_path}`);
+debug(`gateway_api_path: ${config.gateway_api_path}`);
+debug(`gateway_url: ${config.gateway_url || "not set"}`);
 
-debug(`JANUS_WS_URL: ${config.JANUS_WS_URL || "not set"}`);
-debug(
-  `JANUS_API_SECRET: ${config.JANUS_API_SECRET ? "[REDACTED]" : "not set"}`
-);
+debug(`target_janus_ws_url: ${config.target_janus_ws_url || "not set"}`);
+debug(`target_op25_api_url: ${config.target_op25_api_url || "not set"}`);
+debug(`target_op25_ws_url: ${config.target_op25_ws_url || "not set"}`);
 
-if (
-  isSet(config.CLOUDFLARE_TURN_KEY_ID) &&
-  isSet(config.CLOUDFLARE_TURN_API_TOKEN)
-) {
+if (isSet(config.target_turn_key_id) && isSet(config.target_turn_api_token)) {
   debug("TURN credentials enabled.");
 } else {
   debug("TURN credentials disabled.");
 }
-
-debug(`OP25_API_SERVER_URL: ${config.OP25_API_SERVER_URL || "not set"}`);
-debug(`OP25_API_WS_URL: ${config.OP25_API_WS_URL || "not set"}`);
-debug(
-  `OP25_API_SECRET_TOKEN: ${
-    config.OP25_API_SECRET_TOKEN ? "[REDACTED]" : "not set"
-  }`
-);
 
 module.exports = config;
