@@ -44,8 +44,7 @@ app.get("/config.js", (req, res) => {
   res.send(`
     window.config = {
       gateway_ws_url: ${JSON.stringify(gatewayWsUrl)},
-      gateway_api_url: ${JSON.stringify(gatewayApiUrl)},
-      turn_server_url: ${JSON.stringify(config.turn_server_url)}
+      gateway_api_url: ${JSON.stringify(gatewayApiUrl)}
     };
   `);
 });

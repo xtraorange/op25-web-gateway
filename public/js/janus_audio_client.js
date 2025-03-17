@@ -96,32 +96,27 @@ export default class JanusAudioClient {
     }, 5000);
     this.cleanupPeerConnection();
 
+    iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+
     // Fetch TURN credentials from our backend
     let turnCredentials = {};
     try {
       const res = await fetch("/api/turn-credentials");
       turnCredentials = await res.json();
       console.log("Fetched TURN credentials:", turnCredentials);
+
+      iceServers.push({
+        urls: turnCredentials.urls || "turn:turn.example.com?transport=tcp",
+        username: turnCredentials.username || "defaultUsername",
+        credential: turnCredentials.credential || "defaultCredential",
+      });
     } catch (err) {
       console.error("Failed to fetch TURN credentials:", err);
     }
 
-    // Get TURN server URL from the injected configuration (or use fallback)
-    const turnServerUrl =
-      window.config && window.config.turn_server_url
-        ? window.config.turn_server_url
-        : "turn:turn.example.com?transport=tcp";
-
     // Create RTCPeerConnection with TURN and STUN servers
     this.peerConnection = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: turnServerUrl,
-          username: turnCredentials.username || "defaultUsername",
-          credential: turnCredentials.credential || "defaultCredential",
-        },
-        { urls: "stun:stun.l.google.com:19302" },
-      ],
+      iceServers: iceServers,
       // Uncomment the next line to force relay-only:
       // iceTransportPolicy: "relay"
     });
