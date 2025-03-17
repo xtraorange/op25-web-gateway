@@ -21,23 +21,31 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Serve frontend configuration (exposing gateway endpoints)
+// server.js (updated /config.js route)
 app.get("/config.js", (req, res) => {
   res.setHeader("Content-Type", "application/javascript");
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+
+  // Compute gateway URL from config or fallback.
+  const gatewayUrl =
+    config.gateway_url || `http://localhost:${config.gateway_port}`;
+  // Convert http(s) to ws(s) and append the ws path.
+  const wsProtocol = gatewayUrl.startsWith("https") ? "wss" : "ws";
+  const gatewayWsUrl =
+    wsProtocol +
+    "://" +
+    gatewayUrl.replace(/^https?:\/\//, "") +
+    config.gateway_ws_path;
+  const gatewayApiUrl = gatewayUrl + config.gateway_api_path;
+
   res.send(`
     window.config = {
-      gateway_ws_url: ${JSON.stringify(
-        (config.gateway_url || `http://localhost:${config.gateway_port}`) +
-          config.gateway_ws_path
-      )},
-      gateway_api_url: ${JSON.stringify(
-        (config.gateway_url || `http://localhost:${config.gateway_port}`) +
-          config.gateway_api_path
-      )},
-      // You might also expose TURN server info if needed.
-      turn_server_url: ${JSON.stringify(
-        "turn:turn.cloudflare.com:3478?transport=udp"
-      )}
+      gateway_ws_url: ${JSON.stringify(gatewayWsUrl)},
+      gateway_api_url: ${JSON.stringify(gatewayApiUrl)},
+      turn_server_url: ${JSON.stringify(config.turn_server_url)}
     };
   `);
 });
