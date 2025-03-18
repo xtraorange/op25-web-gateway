@@ -3,7 +3,7 @@ const WebSocket = require("ws");
 const Log = require("./log");
 const config = require("./config");
 const { handleJanusWsProxy } = require("./janus_proxy");
-const { handleOp25WsProxy } = require("./op25_ws_proxy");
+const { handleOp25WsBroadcast } = require("./op25_ws_proxy");
 
 const log = new Log("[GatewayWsProxy]");
 
@@ -11,7 +11,7 @@ function initGatewayWsProxy(gatewayWss) {
   gatewayWss.on("connection", (clientWs, request) => {
     log.debug("Client WebSocket connected on gateway");
 
-    // Wait for the first message that should indicate which service to use.
+    // Wait for the first message that indicates which service to use.
     clientWs.once("message", (message) => {
       let initMsg;
       try {
@@ -28,7 +28,7 @@ function initGatewayWsProxy(gatewayWss) {
         return;
       }
 
-      // Route to the appropriate target based on the service requested.
+      // Route to the appropriate target based on the requested service.
       if (initMsg.service === "janus") {
         if (!config.target_janus_ws_url) {
           log.error("target_janus_ws_url not set; cannot proxy Janus.");
@@ -42,7 +42,9 @@ function initGatewayWsProxy(gatewayWss) {
           clientWs.close();
           return;
         }
-        handleOp25WsProxy(clientWs);
+        // Instead of creating a new connection per client,
+        // subscribe this client to the global OP25 WS connection.
+        handleOp25WsBroadcast(clientWs);
       } else {
         log.error("Unknown service requested:", initMsg.service);
         clientWs.close();
