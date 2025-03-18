@@ -64,12 +64,17 @@ app.use(config.gateway_api_path, (req, res, next) => {
 
 const server = http.createServer(app);
 
-// Initialize the unified WebSocket proxy for the gateway.
-const gatewayWss = new WebSocket.Server({ noServer: true });
+// Create a single WebSocket.Server instance for the gateway.
+const gatewayWss = new (require("ws").Server)({ noServer: true });
 initGatewayWsProxy(gatewayWss);
 
+// Upgrade handling: route based on the URL.
 server.on("upgrade", (request, socket, head) => {
-  if (request.url.startsWith(config.gateway_ws_path)) {
+  const url = request.url;
+  if (
+    url.startsWith(config.gateway_ws_janus_path) ||
+    url.startsWith(config.gateway_ws_op25_path)
+  ) {
     gatewayWss.handleUpgrade(request, socket, head, (ws) => {
       gatewayWss.emit("connection", ws, request);
     });
@@ -79,5 +84,5 @@ server.on("upgrade", (request, socket, head) => {
 });
 
 server.listen(config.gateway_port, () => {
-  log.debug(`Running at http://localhost:${config.gateway_port}`);
+  console.log(`[Server] Running on port ${config.gateway_port}`);
 });
