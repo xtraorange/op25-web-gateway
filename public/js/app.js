@@ -1,26 +1,43 @@
 // app.js
-import JanusAudioClient from "./janus_audio_client.js";
+import JanusClient from "./janus.js";
+import Op25Client from "./op25.js";
 
-// Determine the WebSocket URL dynamically using the injected configuration.
-// If window.config.gateway_ws_url is set, use that; otherwise, fall back to a constructed URL.
-const wsUrl =
-  window.config && window.config.gateway_ws_url
-    ? window.config.gateway_ws_url
+// Determine Janus WS URL from configuration or fallback.
+const janusWsUrl =
+  window.config && window.config.gateway_ws_janus_url
+    ? window.config.gateway_ws_janus_url
     : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
         window.location.host
-      }/ws`;
+      }/ws/janus`;
 
-window.janusClient = new JanusAudioClient({
-  wsUrl,
+// Determine OP25 WS URL from configuration or fallback.
+const op25WsUrl =
+  window.config && window.config.gateway_ws_op25_url
+    ? window.config.gateway_ws_op25_url
+    : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
+        window.location.host
+      }/ws/op25`;
+
+// Instantiate Janus client.
+window.janusClient = new JanusClient({
+  wsUrl: janusWsUrl,
   audioElementId: "audioPlayer",
 });
+janusClient.initWebSocket();
 
-// Initialize the WebSocket connection when the page loads.
-window.onload = () => {
-  janusClient.initWebSocket();
-};
+// Instantiate OP25 client.
+window.op25Client = new Op25Client({
+  wsUrl: op25WsUrl,
+});
+op25Client.initWebSocket();
 
-// Expose functions to the HTML buttons.
+// Register a callback for OP25 messages.
+op25Client.onMessage((msg) => {
+  console.log("Received OP25 update:", msg);
+  // Process OP25 updates, e.g., update UI.
+});
+
+// Expose functions to your HTML buttons.
 window.startStream = function () {
   janusClient.startStream(1); // Example: using stream ID 1
 };

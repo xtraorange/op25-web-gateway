@@ -1,36 +1,30 @@
-// janus_audio_client.js
-export default class JanusAudioClient {
-  constructor({
-    wsUrl, // now provided dynamically
-    audioElementId = "audioPlayer",
-  } = {}) {
-    // Use the provided wsUrl, or fall back to the injected configuration.
-    this.wsUrl =
-      wsUrl ||
-      (window.config && window.config.gateway_ws_url) ||
-      `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
-        window.location.host
-      }/ws`;
-    this.audioElementId = audioElementId;
+// janus.js
+export default class JanusClient {
+  constructor({ wsUrl, audioElementId = "audioPlayer" } = {}) {
+    if (!wsUrl) {
+      throw new Error("A wsUrl for Janus is required.");
+    }
+    this.wsUrl = wsUrl;
+    this.audioElement = document.getElementById(audioElementId);
+    if (!this.audioElement) {
+      console.warn(`No <audio> element found with id="${audioElementId}"`);
+    }
     this.ws = null;
+    // Janus session state.
     this.sessionId = null;
     this.handleId = null;
     this.peerConnection = null;
     this.isProcessingSDP = false;
     this.isWatching = false;
     this.iceCandidateQueue = [];
-    this.audioElement = document.getElementById(audioElementId);
-    if (!this.audioElement) {
-      console.warn(`No <audio> element found with id="${audioElementId}"`);
-    }
   }
 
   initWebSocket() {
-    console.log("Creating WebSocket connection to:", this.wsUrl);
+    console.log("Creating Janus WebSocket connection to:", this.wsUrl);
     this.ws = new WebSocket(this.wsUrl);
     this.ws.onopen = () => {
-      console.log("WebSocket connected");
-      // Send initial message to indicate that this client wants to use the Janus service.
+      console.log("Janus WS connected");
+      // Identify the service to the backend.
       this.ws.send(JSON.stringify({ service: "janus" }));
     };
     this.ws.onmessage = async (event) => {
@@ -38,15 +32,15 @@ export default class JanusAudioClient {
       this.handleWSMessage(message);
     };
     this.ws.onclose = () => {
-      console.warn("WebSocket connection closed");
+      console.warn("Janus WS connection closed");
       this.cleanupPeerConnection();
       setTimeout(() => this.initWebSocket(), 2000);
     };
-    this.ws.onerror = (err) => console.error("WebSocket error:", err);
+    this.ws.onerror = (err) => console.error("Janus WS error:", err);
   }
 
   handleWSMessage(message) {
-    console.log("Received:", message);
+    console.log("Janus client received:", message);
     if (message.event === "janus_session") {
       this.sessionId = message.sessionId;
       this.handleId = message.handleId;
@@ -81,7 +75,7 @@ export default class JanusAudioClient {
       console.log("Janus keepalive ping");
       return;
     }
-    console.log("Unhandled message:", message);
+    console.log("Unhandled Janus message:", message);
   }
 
   async handleRemoteSDP(jsep) {
@@ -91,20 +85,16 @@ export default class JanusAudioClient {
     }
     this.isProcessingSDP = true;
     console.log("Handling SDP Offer...");
-    setTimeout(() => {
-      this.isProcessingSDP = false;
-    }, 5000);
+    setTimeout(() => (this.isProcessingSDP = false), 5000);
     this.cleanupPeerConnection();
 
     let iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
-    // Fetch TURN credentials from our backend
-    let turnCredentials = {};
+    // Fetch TURN credentials from our backend.
     try {
-      const res = await fetch("/api/turn-credentials");
-      turnCredentials = await res.json();
+      const res = await fetch("/turn-credentials");
+      const turnCredentials = await res.json();
       console.log("Fetched TURN credentials:", turnCredentials);
-
       iceServers.push({
         urls: turnCredentials.urls || "turn:turn.example.com?transport=tcp",
         username: turnCredentials.username || "defaultUsername",
@@ -114,7 +104,6 @@ export default class JanusAudioClient {
       console.error("Failed to fetch TURN credentials:", err);
     }
 
-    // Create RTCPeerConnection with TURN and STUN servers
     this.peerConnection = new RTCPeerConnection({
       iceServers: iceServers,
       // Uncomment the next line to force relay-only:
@@ -142,6 +131,7 @@ export default class JanusAudioClient {
             handle_id: this.handleId,
             candidate: event.candidate,
             transaction: `txn_${Date.now()}`,
+            service: "janus",
           })
         );
       } else {
@@ -185,6 +175,7 @@ export default class JanusAudioClient {
           body: { request: "start" },
           jsep: answer,
           transaction: `txn_${Date.now()}`,
+          service: "janus",
         })
       );
     } catch (err) {
@@ -232,11 +223,11 @@ export default class JanusAudioClient {
         handle_id: this.handleId,
         body: { request: "watch", id: streamId, audio: true, video: false },
         transaction: `txn_${Date.now()}`,
+        service: "janus",
       })
     );
   }
 
-  // Example stub for sending additional commands if needed.
   sendCommand(command) {
     console.log("Sending command to Janus:", command);
     this.ws.send(
@@ -246,6 +237,7 @@ export default class JanusAudioClient {
         handle_id: this.handleId,
         body: { request: command },
         transaction: `txn_${Date.now()}`,
+        service: "janus",
       })
     );
   }
