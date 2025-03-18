@@ -10,7 +10,8 @@ const config = {
   // Gateway (client-facing) configuration.
   gateway_port: process.env.GATEWAY_PORT || 3000,
   // For now, we assume the gateway URL is constructed from the host/port of this server.
-  gateway_ws_path: process.env.GATEWAY_WS_PATH || "/ws",
+  gateway_ws_janus_path: process.env.GATEWAY_WS_JANUS_PATH || "/ws/janus",
+  gateway_ws_op25_path: process.env.GATEWAY_WS_OP25_PATH || "/ws/op25",
   gateway_api_path: process.env.GATEWAY_API_PATH || "/api",
   // Exposed to the frontend.
   gateway_url: process.env.GATEWAY_URL || null,

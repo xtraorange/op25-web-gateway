@@ -32,16 +32,22 @@ app.get("/config.js", (req, res) => {
     config.gateway_url || `http://localhost:${config.gateway_port}`;
   // Convert http(s) to ws(s) and append the ws path.
   const wsProtocol = gatewayUrl.startsWith("https") ? "wss" : "ws";
-  const gatewayWsUrl =
+  const gatewayWsJanusUrl =
     wsProtocol +
     "://" +
     gatewayUrl.replace(/^https?:\/\//, "") +
-    config.gateway_ws_path;
+    config.gateway_ws_janus_path;
+  const gatewayWsOp25Url =
+    wsProtocol +
+    "://" +
+    gatewayUrl.replace(/^https?:\/\//, "") +
+    config.gateway_ws_op25_path;
   const gatewayApiUrl = gatewayUrl + config.gateway_api_path;
 
   res.send(`
     window.config = {
-      gateway_ws_url: ${JSON.stringify(gatewayWsUrl)},
+      gateway_ws_janus_url: ${JSON.stringify(gatewayWsJanusUrl)},
+      gateway_ws_op25_url: ${JSON.stringify(gatewayWsOp25Url)},
       gateway_api_url: ${JSON.stringify(gatewayApiUrl)}
     };
   `);
